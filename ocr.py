@@ -90,22 +90,18 @@ async def process_pdf_async(input_pdf_path, pages_per_chunk=8):
     results = await asyncio.gather(*tasks)
     return [r for r in results if r is not None]
 
-all_responses = asyncio.run(process_pdf_async("./pdf_files/anime.pdf"))
 
+def get_all_pdf(path_file):
+    all_responses = asyncio.run(process_pdf_async(path_file))
+    all_pdf = ""
 
-all_pdf = ""
+    for response_dict in all_responses:
+        for i in range(len(response_dict["pages"])):
+            if response_dict["pages"][i]["images"] != []:
+                for j in range(len(response_dict["pages"][i]["images"])):
+                    image_caption = json.loads(response_dict["pages"][i]["images"][j]["image_annotation"])
+                    all_pdf += image_caption["description"]
 
-for response_dict in all_responses:
-  for i in range(len(response_dict["pages"])):
-
-
-    if response_dict["pages"][i]["images"] != []:
-      for j in range(len(response_dict["pages"][i]["images"])):
-        image_caption = json.loads(response_dict["pages"][i]["images"][j]["image_annotation"])
-        all_pdf += image_caption["description"]
-
-    all_pdf += response_dict["pages"][i]["markdown"]
-
-
-  with open("./text_document/ocr_all_pdf.txt", "w", encoding="utf-8") as f:
-      f.write(all_pdf)
+            all_pdf += response_dict["pages"][i]["markdown"]
+    with open("./text_document/ocr_all_pdf.txt", "w", encoding="utf-8") as f:
+        f.write(all_pdf)
