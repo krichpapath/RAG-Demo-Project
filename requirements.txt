@@ -8,3 +8,5 @@ sentence-transformers
 python-dotenv
 pymupdf
 pymupdf4llm
+mistralai
+pypdf
