@@ -7,12 +7,10 @@ def embed_text(text: str):
     return embeddings[0]
 
 def embed_queries(texts: list[str]):
-    embeddings = model.encode(texts, prompt_name="query")
-    return embeddings
+    return model.encode(texts, prompt_name="query", batch_size=16, show_progress_bar=True)
 
 def embed_texts(texts: list[str]):
-    embeddings = model.encode(texts)
-    return embeddings
+    return model.encode(texts, batch_size=16, show_progress_bar=True)
 
 # Testing enbedding system
 if __name__ == "__main__":
