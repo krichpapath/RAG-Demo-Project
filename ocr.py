@@ -1,22 +1,22 @@
 import os
-from mistralai import Mistral
-from dotenv import load_dotenv
 import base64
-from pydantic import BaseModel, Field
-from enum import Enum
-from mistralai.extra import response_format_from_pydantic_model
-from pypdf import PdfWriter, PdfReader
-import time
 import json
 import asyncio
+from enum import Enum
+from typing import Optional
+
+from mistralai import Mistral
+from mistralai.extra import response_format_from_pydantic_model
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+from pypdf import PdfReader, PdfWriter
 
 load_dotenv()
-
 api_key = os.getenv('MISTRAL_API_KEY')
-
-
 client = Mistral(api_key=api_key)
 
+
+# --- Pydantic Models ---
 
 class ImageType(str, Enum):
     GRAPH = "graph"
@@ -29,25 +29,25 @@ class Image(BaseModel):
     description: str = Field(..., description="A description of the image.")
 
 class Document(BaseModel):
-    language: str = Field(..., description="The language of the document in ISO 639-1 code format (e.g., 'en', 'fr').")
+    language: str = Field(..., description="The language of the document in ISO 639-1 code format (e.g., 'en', 'th').")
     summary: str = Field(..., description="A summary of the document.")
     authors: list[str] = Field(..., description="A list of authors who contributed to the document.")
 
-def encode_pdf(pdf_path):
-    """Encode the pdf to base64."""
+
+# --- Utilities ---
+
+def encode_pdf(pdf_path: str) -> Optional[str]:
+    """Encode the PDF file to a base64 string."""
     try:
         with open(pdf_path, "rb") as pdf_file:
             return base64.b64encode(pdf_file.read()).decode('utf-8')
-    except FileNotFoundError:
-        print(f"Error: The file {pdf_path} was not found.")
+    except Exception as e:
+        print(f"Failed to encode PDF {pdf_path}: {e}")
         return None
-    except Exception as e:  # Added general exception handling
-        print(f"Error: {e}")
-        return None
-    
 
 
-async def process_chunk_async(start_page, end_page, reader, input_pdf_path):
+async def process_chunk_async(start_page: int, end_page: int, reader: PdfReader, input_pdf_path: str) -> Optional[dict]:
+    """Process a chunk of the PDF asynchronously using Mistral OCR."""
     writer = PdfWriter()
     for i in range(start_page, end_page):
         writer.add_page(reader.pages[i])
@@ -78,30 +78,46 @@ async def process_chunk_async(start_page, end_page, reader, input_pdf_path):
 
     return await asyncio.to_thread(call_ocr)
 
-async def process_pdf_async(input_pdf_path, pages_per_chunk=8):
+
+async def process_pdf_async(input_pdf_path: str, pages_per_chunk: int = 2) -> list[dict]:
+    """Split the PDF into chunks and run OCR on each chunk in parallel."""
     reader = PdfReader(input_pdf_path)
-    total = len(reader.pages)
+    total_pages = len(reader.pages)
     tasks = []
 
-    for i in range(0, total, pages_per_chunk):
-        end = min(i + pages_per_chunk, total)
+    for i in range(0, total_pages, pages_per_chunk):
+        end = min(i + pages_per_chunk, total_pages)
         tasks.append(process_chunk_async(i, end, reader, input_pdf_path))
 
     results = await asyncio.gather(*tasks)
     return [r for r in results if r is not None]
 
 
-def get_all_pdf(path_file):
+def get_all_pdf(path_file: str, output_path: str = "./text_document/ocr_all_pdf.txt"):
+    """Main function to extract text + image captions and write to .txt."""
     all_responses = asyncio.run(process_pdf_async(path_file))
     all_pdf = ""
 
     for response_dict in all_responses:
-        for i in range(len(response_dict["pages"])):
-            if response_dict["pages"][i]["images"] != []:
-                for j in range(len(response_dict["pages"][i]["images"])):
-                    image_caption = json.loads(response_dict["pages"][i]["images"][j]["image_annotation"])
-                    all_pdf += image_caption["description"]
+        for page in response_dict["pages"]:
+            # Extract image captions
+            for img in page.get("images", []):
+                image_caption = json.loads(img.get("image_annotation", "{}"))
+                all_pdf += image_caption.get("description", "") + "\n"
 
-            all_pdf += response_dict["pages"][i]["markdown"]
-    with open("./text_document/ocr_all_pdf.txt", "w", encoding="utf-8") as f:
-        f.write(all_pdf)
+            # Extract OCR markdown
+            all_pdf += page.get("markdown", "") + "\n"
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(all_pdf.strip())
+
+    print(f"OCR completed. Extracted text saved to: {output_path}")
+
+if __name__ == "__main__":
+    sample_pdf_path = "./pdf_files/anime.pdf"
+    output_txt_path = "./text_document/ocr_all_pdf.txt"
+
+    if not os.path.exists(sample_pdf_path):
+        print(f"❌ File not found: {sample_pdf_path}")
+    else:
+        get_all_pdf(sample_pdf_path, output_path=output_txt_path)

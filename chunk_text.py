@@ -1,3 +1,5 @@
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 def count_words(text):
     return len(text.split())
 
@@ -46,12 +48,23 @@ def recursive_chunk(text, max_words=256, overlap_words=60):
 
     return final_chunks
 
+def split_text_with_langchain(text: str, chunk_size: int = 1024, chunk_overlap: int = 200):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=["\n\n", "\n", " ", ""],
+        length_function=len,
+    )
+    chunks = text_splitter.split_text(text)
+    return chunks
+
 if __name__ == "__main__":
-    with open("./text_document/all_pdf.txt", "r", encoding="utf-8") as f:
+    with open("./text_document/thai_paper.txt", "r", encoding="utf-8") as f:
         big_text = f.read()
 
-    chunks = recursive_chunk(big_text, max_words=50, overlap_words=100)
+    chunks = split_text_with_langchain(big_text, chunk_size=1024, chunk_overlap=100)
 
     print(f"Total chunks: {len(chunks)}")
-    for i, chunk in enumerate(chunks[:6]):
-        print(f"\n--- Chunk {i+1} ---\n{chunk[:300]}...")
+    for i, chunk in enumerate(chunks):
+        print(f"\n--- Chunk {i+1} ---\n{chunk}")
+
