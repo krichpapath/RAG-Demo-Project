@@ -2,9 +2,7 @@
 
 ## ACS: Japan Anime streaming web application
 
-คุณากร ตานา, ธนโชติ วงศ์ใหญ่, ธนพงษ์ ชิมมณี, และ พศิน เลาห์กูติ<br>Kunakron Tana, Thanachot Wongyai, Thanapong Simmanee, and Pasin Laopooti
-
-## อาจารย์ที่ปรึกษา ตร.ศุวิล ชมชัยยา <br> Suvil Chomchaiya Ph.D.
+คุณากร ตานา, ธนโชติ วงศ์ใหญ่, ธนพงษ์ ชิมมณี, และ พศิน เลาห์กูติ<br>Kunakron Tana, Thanachot Wongyai, Thanapong Simmanee, and Pasin Laopooti<br>อาจารย์ที่ปรึกษา ดร.ศุวิล ชมชัยยา<br>Suvil Chomchaiya Ph.D.
 
 ## บทคัดย่อ
 
@@ -100,7 +98,7 @@ Docker
 - Anime_genre มีไว้เพื่อเชื่อมโยงตารางที่ที่เก็บข้อมูลเป็นคุณลักษณะที่มีค่าได้หลายค่า (Multi valued attributes)
 - Genre มีไว้บันทึกข้อมูลแนวเรื่องของอนิเมะทั้งหมดที่มีในฐานข้อมูล
 - Fly_comment มีไว้บันทึกข้อมูลการแสดงความคิดเห็นในรูปแบบข้อความลอย
-This image is an entity-relationship diagram (ERD) for a database schema related to an anime streaming service. The diagram includes various tables such as Admin, User, Subscription, Subscription_package, Genre, Anime, Episode, Comment, To_watch_list, History, Studio, Anime_Genre, and Fly_comment. Each table has primary keys (PK) and foreign keys (FK) that establish relationships between them. The tables represent different entities in the system, such as users, subscriptions, anime details, comments, and genres, and how they interact with each other.
+This image is an Entity-Relationship Diagram (ERD) for a database schema related to an anime streaming service. It shows various entities such as User, Admin, Anime, Episode, Comment, Studio, Genre, Subscription, Subscription_package, To_watch_list, and History. Each entity has attributes and relationships with other entities, indicated by primary keys (PK), foreign keys (FK), and their respective attributes. The diagram illustrates how data is structured and interconnected within the database.
 ![img-0.jpeg](img-0.jpeg)
 
 รูปภาพ 1 ER Diagram
@@ -114,7 +112,7 @@ This image is an entity-relationship diagram (ERD) for a database schema related
 ## - สมมติฐานของการจัดหมวดหมู่แบบเบย์แบบง่าย
 
 การจัดหมวดหมู่แบบเบย์แบบง่ายอาศัยสมมติฐานเบื้องต้น ซึ่งเรียกว่า "สมมติฐานแบบสุ่มและ เป็นอิสระ" (Naive Bayes Assumption หรือ Simple Bayes Assumption) ซึ่งสมมติว่า คุณลักษณะต่างๆ ของข้อมูลนั้นเป็นอิสระซึ่งกันและกัน ภายใต้เงื่อนไขของคลาสหรือประเภท ของข้อมูล หรือกล่าวอีกนัยหนึ่งคือ ไม่มีความสัมพันธ์ระหว่างคุณลักษณะเหล่านั้นแม้สมมติฐานนี้ อาจไม่เป็นความจริงในหลายปัญหา แต่การนำการจัดหมวดหมู่แบบเบย์แบบง่ายมาใช้ก็ยัง สามารถให้ผลลัพธ์การจำแนกประเภทที่มีประสิทธิภาพได้ ซึ่งเนื่องมาจากข้อดีคือ มีความขับข้อน ในการคำนวณต่ำ สามารถประมวลผลได้รวดเร็ว และไม่เกิดปัญหาการคำนวณค่าความน่าจะเป็น เป็นศูนย์ดังนั้น ด้วยหลักการและสมมติฐานดังกล่าว จึงทำให้ การจัดหมวดหมู่แบบเบย์แบบง่าย เป็นอัลกอริทึมที่มีประสิทธิภาพสำหรับการจำแนกประเภทในหลายปัญหา
-A table showing a classifier system for anime recommendations based on genres. The table is divided into two columns: anime titles and genres. The classifier uses Bayesian probability to recommend different anime titles based on user preferences, categorized into three groups: vivid strike, somewhat vivid, and not vivid.
+The image depicts a flowchart illustrating a classification process for anime recommendations. On the left, there is a table with two columns: one for anime names and another for genres. The table is titled 'ข้อมูลตั้งข้อมูลในรูปข้อมูล' and contains the example 'Angel Beats!' under the anime name column and 'Drama, comedy' under the genre column. The data from this table is fed into a classifier, which is represented by a box containing the formula P(A|B) = P(B|A) * P(A) / P(B). The classifier processes the data and outputs recommendations into three categories, each with a different color: green, blue, and orange. The green category includes 'ViVid Strike, เรียกเดินสมุทร โรเกียนมายมัน, Nanoha, Madoka'. The blue category includes 'Konosuba, To love ru, Love flops, Date a live'. The orange category includes 'Fate zero, Spy room, Demon Slayer, Black clover'. The overall concept of the image is to show how data from a table of anime and their genres can be classified and used to recommend other anime in similar genres.
 - ตัวอย่างการนำการจัดหมวดหมู่แบบเบย์แบบง่ายไปใช้ในโครงงานนี้
 
 จากรูปภาพ 2 ได้นำข้อมูลชื่ออนิเมะกับแนวเรื่องทั้งหมดในฐานข้อมูลมาเป็นชุดข้อมูลในการฝึก โมเดลหลังจากฝึกโมเดลแล้วเมื่อผู้ใช้รับชมอนิเมะแต่ละเรื่องอนิเมะเหล่านั้นจะถูกบันทึกใน ประวัติรับชม และเมื่อผู้ใช้เรียกดูหน้าหลักของโปรแกรมประยุกต์บนเว็บก็จะไปเรียกใช้ส่วนต่อ ประสานโปรแกรมประยุกต์ (API) โมเดลที่ฝึกมาแล้วพร้อมกับนำแนวเรื่องที่รับชมล่าสุดเป็น ข้อมูลนำเข้าจากนั้นโมเดลก็จะพยากรณ์ชื่ออนิเมะเรื่องถัดไปที่มีแนวเรื่องใกล้เคียงกับเรื่องที่ รับชมมาล่าสุด
@@ -153,8 +151,8 @@ A table showing a classifier system for anime recommendations based on genres. T
 | Love Flops | Sci-fi,Comedy, Harem, <br> Romance | Date A Live | Comedy,Harem, <br> Romance |
 
 จากตารางที่ 3 ที่แสดงผลการแนะนำอนิเมะจากแนวเรื่องของระบบ สามารถสังเกตได้ว่าระบบมีขอบเขต ในการแนะนำ ที่กว้างขวางขึ้น เช่น จากเรื่อง To love ru ที่เป็นแนวฮาเร็ม ชีวิตประจำวัน และตลก เรื่องที่ แนะนำกลับได้ Spy classroom ที่เป็นแนวต่อสู้ แต่มึดลกปนมาด้วยนอกจากนี้อนิเมะที่แนะนำถัดไปก็ยังคงมี องค์ประกอบแนวฮาเร็มผสม อยู่ซึ่งอาจจะวนซ้ำในการรับชมครั้งที่ 4 หรือ 5 ได้เนื่องจากจำนวนข้อมูลที่มีจำกัด จุดประสงค์ถัดไป ของโปร แกรมประยุกต์บนเว็บ นี้คือการสร้างขุมขนสำหรับผู้ที่ชื่นขอบการรับขมอนิเมะ โดยให้พื้นที่แก่ผู้ใช้ใน การ แสดงความคิดเห็นและแลกเปลี่ยนมุมมองต่อเนื้อหาต่างๆ ซึ่งมีอยู่ 2 รูปแบบ ดังนี้ รูปแบบแรกจากรูปภาพ 3 คือการ แสดงความคิดเห็นทั่วไปได้วีดิทัศน์ซึ่งผู้ชมสามารถ เขียนแสดงความคิดเห็นได้ เพื่อเผยแพร่ให้ผู้อื่น รับทราบ นอกจากนี้ผู้ชมเองก็จะได้เห็น ความคิดเห็นทั้งหมด เช่นกัน การแสดงความคิดเห็น ในลักษณะนี้ถือเป็นพื้นที่ สาธารณะสำหรับ แบ่งปันและแลกเปลี่ยนมุมมองได้อย่างเปิด กว้างขึ่ง จะเอื้อให้ เกิดการปฏิสัมพันธ์ และความรู้สึกเป็น ส่วนหนึ่งของขุมขนผู้ชม อนิเมะรวมถึงได้รับมุมมองที่หลากหลายจาก สมาชิกผู้ร่วมชมเนื้อหาเดียวกัน
-A screenshot of a webpage showing details of an episode titled 'Classroom of The Elite ss1 EP: 1 What is Evil? Whatever Springs from Weakness'. The page includes genre tags such as Drama, Psychological, Thriller, and School. There is a section for comments with two visible comments in a non-English language, likely Thai. The interface includes options to add to a watchlist, send messages, and write comments.
-A screenshot of an anime streaming website. The main section shows an anime character standing next to a red couch in a room. The right sidebar lists episodes and recommends other anime series. The interface includes navigation options like 'Category' and 'My watchlist' at the top, and a search bar. The text in the image is in Thai.
+The image shows a screenshot of a webpage or application interface for a video titled 'Classroom of The Elite ss1 EP: 1 What is Evil? Whatever Springs from Weakness'. The interface includes options to add the video to a watchlist, and there is a section for comments. Two comments are visible, one from user 'aikidoaikido115' and another from user 'rr', both written in Thai. The video is categorized under Drama, Psychological, Thriller, and School genres and has 61 views.
+A screenshot of an anime streaming website. The main section shows a scene from an anime where a character is standing on a red couch and another character is on the floor. The website interface includes navigation options like 'Category' and 'My watchlist' at the top. On the right side, there are episode selections and recommendations for other anime. The text is in a language that appears to be Thai.
 ![img-0.jpeg](img-0.jpeg)
 
 รูปภาพ 3 การแลกเปลี่ยนความคิดเห็นระหว่างกันของผู้ใช้
@@ -164,8 +162,8 @@ A screenshot of an anime streaming website. The main section shows an anime char
 ![img-1.jpeg](img-1.jpeg)
 
 รูปภาพ 4 การแสดงความคิดเห็นผ่านข้อความลอยบนวีดิทัศน์ตามเวลาจริง (real time)
-A screenshot of an anime update form in Thai language. The form includes fields for editing the anime title, genre, rating, images, and file, as well as a checkbox to indicate if the anime is complete.
-A promotional image for the anime 'Spy Classroom SS1' featuring a character sitting on a blue chair. The image is from the anime hub website and includes genre tags such as Action, Comedy, and Slice of life. There are buttons for 'Play' and 'More Info'.
+This image shows a form for updating anime information. The form includes fields for editing the anime title, genre, rating, and optional fields for editing anime images and files. The genres selected are Action, Comedy, and Fantasy. The rating is set to 8, and the form indicates that the update is complete.
+This image is a screenshot of the Animehub website. It features a promotional banner for the anime 'Spy Classroom SS1'. The banner includes a character sitting on a chair with a background that suggests a premium offering. The anime is categorized under Action, Comedy, and Slice of Life genres. There are buttons for 'Play' and 'More Info' indicating options for the user to either watch the anime or get more details about it.
 ในส่วนของผู้ดูแลระบบสามารถที่จะนำอนิเมะเรื่องใหม่เพิ่มเข้ามาในโปรแกรมประยุกต์บนเว็บได้ผ่านการ CRUD ตามรูปภาพ 5
 ![img-2.jpeg](img-2.jpeg)
 
@@ -175,8 +173,8 @@ A promotional image for the anime 'Spy Classroom SS1' featuring a character sitt
 ![img-3.jpeg](img-3.jpeg)
 
 รูปภาพ 6 หน้าหลักของโปรแกรมประยุกต์บนเว็บ 1
-A screenshot of an anime streaming website or application displaying various anime series. The image is divided into two sections: 'New Anime' and 'Other Anime'. Each anime is represented by a cover image, title, status (e.g., Finished, On air), view count, and genre. The 'New Anime' section includes titles like 'The Irregular at Magic High School', 'Happy Sugar Life', 'Mahou Shoujo ni Akogarete', 'Mahou Shoujo Lyrical Nanoha', 'Puella Magi Madoka Magica', and 'Love Flops'. The 'Other Anime' section shows premium content with titles like 'High School Fleet' and others that are not fully visible.
-A screenshot of an anime streaming website showing search results for the term 'classroom'. The results include two anime series: 'Spy Classroom ss1' labeled as premium with 41 views, and 'Classroom of The Elite ss1' labeled as free with 61 views. Each anime has a cover image and genre information.
+The image displays a collection of anime titles categorized into 'New Anime' and 'Other Anime'. Each anime is represented by a cover image with details such as the title, status (e.g., Finished, On air), view count, and genre. The 'New Anime' section includes titles like 'Happy Sugar Life', 'Mahou Shoujo ni Akogarete', 'Mahou Shoujo Lyrical Nanoha', 'Puella Magi Madoka Magica', and 'Love Flops'. The 'Other Anime' section features various other anime titles with their respective cover images and details.
+This image shows a screenshot of an anime streaming website. The website has a search bar at the top right corner with the search term 'classroom' entered. Below the search bar, there are two anime results displayed. The first anime, labeled 'PREMIUM', is titled 'Spy classroom ss1 [On air]' with a view count of 41. The genre is listed as Action, Comedy, Slice of life. The second anime, labeled 'FREE', is titled 'Classroom of The Elite ss1 [On air]' with a view count of 61. The genre is listed as Drama, Psychological, Thriller. Both anime have images representing them, and the website has navigation options such as 'Category' and 'My watchlist' at the top left corner.
 ![img-0.jpeg](img-0.jpeg)
 
 รูปภาพ 7 หน้าหลักของโปรแกรมประยุกต์บนเว็บ 2
@@ -185,31 +183,31 @@ A screenshot of an anime streaming website showing search results for the term '
 ![img-1.jpeg](img-1.jpeg)
 
 รูปภาพ 8 การค้นหาอนิเมะทั้งหมดที่มีคำว่า "Classroom"
-A screenshot of the Animehub website displaying a selection of premium action anime series. The interface shows filters for sorting by newest, categories, and status. Four anime series are visible: 'Release the Spyce' (on air), an unnamed series in Thai (on air), 'ViVid Strike!' (finished), and 'Spy classroom ss1' (on air). Each anime has a cover image, view count, status, and genre information.
-A screenshot of an anime streaming website showing the user's watch list. The watch list contains one item: 'Angel Beats! [On air]', which is a free anime with 65 views. The genre of the anime is listed as Drama and Comedy. The website has a search bar and navigation options for categories and the user's watch list.
+A screenshot of an anime streaming website categorized under 'Action' and 'Premium'. The image shows four anime titles: 'Release the Spyce' (On air), an unnamed anime (On air), 'ViVid Strike!' (Finished), and 'Spy classroom ss1' (On air). Each title includes a cover image, view count, and genre information.
+This image shows a screenshot of an anime streaming website. The website has a black background with a navigation bar at the top that includes the site's logo 'Animehub,' a category menu, a watchlist icon, a search bar, and user profile icons. Below the navigation bar, there is a section titled 'Your Watch List' which contains a single anime titled 'Angel Beats! [On air].' The anime cover art is displayed, showing characters from the series. Additional details include the number of views (65) and the genres (Drama, Comedy). The anime is marked as 'FREE.'
 ![img-2.jpeg](img-2.jpeg)
 
 รูปภาพ 9 การกรองอนิเมะเฉพาะแนวต่อสู้ที่เป็นพรีเมียม(สมมุติว่ามีค่าใช้จ่าย)
 ![img-3.jpeg](img-3.jpeg)
 
 รูปภาพ 10 การเพิ่มอนิเมะเข้าไปไว้ในรายการรับชมในอนาคต
-A screenshot of a premium package selection page for an anime streaming service. The page is titled 'Premium package' and welcomes a user named 'aikidoaikido1151'. It displays three subscription plans: 'Anime battle pass 1 เดือน' priced at 68.00 ฿, 'Anime battle pass 3 เดือน' priced at 199.00 ฿, and 'Anime battle pass 1 ปี' priced at 739.00 ฿. The interface includes a search bar, user profile icon, and navigation options like 'Category' and 'My watchlist'.
-A screenshot of a user profile page on an anime website. The profile includes fields for avatar, email, new password, and confirm password. The username displayed is 'aikidoaikido115'.
+This image shows a subscription plan selection interface for an anime streaming service. The interface is titled 'Premium package' and welcomes a user named 'aikidoaikido115'. It presents three different subscription plans for 'Anime battle pass'. The plans are priced at 68.00, 199.00, and 739.00 units of currency, likely corresponding to different durations or levels of service. The background is black, and the interface elements are in a light color scheme with orange accents.
+This image shows a user profile page from an anime hub website. The profile belongs to a user named 'aikidoaikido115'. The page includes fields for the user's avatar, email, new password, and password confirmation. The avatar is depicted as an anime character with blonde hair and a red ribbon. The background of the page is black, and the profile form is centered on the page. The top of the page features a navigation bar with options such as 'Category' and 'My watchlist', as well as a search bar.
 ![img-0.jpeg](img-0.jpeg)
 
 รูปภาพ 11 การสมัครเป็นผู้ใช้งานพรีเมียมที่สามารถรับชมอนิเมะได้ทุกเรื่อง
 ![img-1.jpeg](img-1.jpeg)
 
 รูปภาพ 12 การแก้ไขข้อมูลส่วนตัวของผู้ใช้
-An anime-style image of a character walking on a bridge with birds flying around. The image features a registration form overlay with fields for username, email address, and password, along with buttons for creating an account and logging in.
-An anime-style image of a character walking with a background of blue skies and birds. The image also includes a login form overlay with fields for username and password, a login button, and an option to create a new account.
+An anime-style image featuring a character with long blue hair, wearing a school uniform, walking on a bridge with birds flying around. The background is a blue sky with clouds. There is a registration form overlay on the image with fields for username, email address, and password, along with a button to create an account and a link to log in if the user already has an account.
+An anime-style image featuring a character with long blue hair, wearing a school uniform, walking on a bridge with birds flying around. The background is a blue sky with clouds. There is a login form overlayed on the image with fields for username, password, and a login button, as well as an option to create a new account.
 ![img-2.jpeg](img-2.jpeg)
 
 รูปภาพ 13 หน้าสมัครสมาชิก
 ![img-3.jpeg](img-3.jpeg)
 
 รูปภาพ 14 หน้าเข้าสู่ระบบ
-A screenshot of the Docker Desktop interface showing the Containers section. The interface displays various containers with details such as name, image, status, CPU usage, ports, and last started time. Some containers are running, while others have exited. The interface also shows overall CPU and memory usage statistics for the containers.
+A screenshot of the Docker Desktop application showing the Containers section. The image displays various containers with their respective names, images, statuses, CPU usage, ports, and last started times. The containers listed include 'backend-do', 'react-app', 'mysql-serv', 'backend', 'app-1', and 'db-1'. The CPU and memory usage statistics are also shown at the top of the interface.
 ![img-0.jpeg](img-0.jpeg)
 
 รูปภาพ 15 ฐานข้อมูลและหลังบ้านทำงานบนสภาพแวดล้อมของ Docker

@@ -5,7 +5,9 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from reranker import compute_scores
 from chunk_text import split_text_with_langchain
-from ocr import get_all_pdf 
+from ocr import get_all_pdf
+from bm25_index import BM25Retriever
+import numpy as np
 import os
 
 # --- Load Environment Variables ---
@@ -15,30 +17,33 @@ client = OpenAI()
 app = FastAPI()
 
 # --- OCR and Chunking Pipeline ---
-
 PDF_PATH = "./pdf_files/anime.pdf"
 TEXT_PATH = "./text_document/ocr_all_pdf.txt"
 
-# 1. Run OCR if output doesn't already exist
+# Run OCR
 if not os.path.exists(TEXT_PATH):
     print(f"Running OCR on {PDF_PATH}...")
     get_all_pdf(PDF_PATH, output_path=TEXT_PATH)
 
-# 2. Read OCR result
+# Read OCR result
 with open(TEXT_PATH, "r", encoding="utf-8") as f:
     big_text = f.read()
 
-# 3. Chunk text
+# Chunk text
 documents = split_text_with_langchain(big_text, chunk_size=1024, chunk_overlap=100)
 print(f"✅ Chunked {len(documents)} text segments.")
 
-# 4. Embed documents
+# Embed documents
 doc_embeddings = embed_texts(documents)
 
-# 5. Build FAISS index
+# Build FAISS index
 faiss_index = FaissIndex()
 faiss_index.build_index(doc_embeddings)
 print("✅ FAISS index built.")
+
+# Initialize BM25
+bm25 = BM25Retriever(documents)
+print("✅ BM25 index initialized.")
 
 # --- FastAPI Endpoints ---
 
@@ -110,4 +115,57 @@ async def generate(user_query: str, top_k: int = 3 , top_rerank: int = 1):
             for doc, score in scored_docs[:top_k]
         ],
         "generated_answer": answer
+    }
+
+@app.get("/generate-hybrid")
+async def generate_hybrid(user_query: str, top_k: int = 5, top_rerank: int = 1, alpha: float = 0.6):
+    # Step 1: Embed query
+    query_vector = embed_queries([user_query])
+
+    # Step 2: FAISS
+    faiss_distances, faiss_indices = faiss_index.search(query_vector, top_k=top_k)
+    faiss_scores = 1 - (faiss_distances[0] / max(faiss_distances[0]))
+
+    # Step 3: BM25
+    bm25_raw = bm25.get_scores(user_query)
+    bm25_norm = (bm25_raw - np.min(bm25_raw)) / (np.max(bm25_raw) - np.min(bm25_raw) + 1e-8)
+
+    # Step 4: Combine
+    hybrid_scores = {}
+    for i, idx in enumerate(faiss_indices[0]):
+        hybrid_scores[idx] = alpha * faiss_scores[i]
+    for idx, bm25_score in enumerate(bm25_norm):
+        hybrid_scores[idx] = hybrid_scores.get(idx, 0) + (1 - alpha) * bm25_score
+
+    top = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    top_docs = [documents[i] for i, _ in top]
+
+    # Step 5: Rerank
+    scores = compute_scores(user_query, top_docs)
+    scored_docs = sorted(zip(top_docs, scores), key=lambda x: x[1], reverse=True)
+    reranked_top_docs = [doc for doc, score in scored_docs[:top_rerank]]
+    context = "\n".join(reranked_top_docs)
+
+    # Step 6: Generate
+    prompt = f"Context:\n{context}\n\nQuestion: {user_query}\nAnswer:"
+
+    response = client.responses.create(
+        model="gpt-4o-mini-2024-07-18",
+        input=[
+            {"role": "system", "content": (
+                "You are a helpful assistant. Only use the context below to answer the question, "
+                "DON'T retrieve data from other sources. Also, make a pun if possible and end with an emoji."
+            )},
+            {"role": "user", "content": prompt}
+        ],
+    )
+    return {
+        "query": user_query,
+        "top_k": top_k,
+        "alpha": alpha,
+        "generated_answer": response.output_text.strip(),
+        "reranked_top_docs": [
+            {"document": doc, "score": score}
+            for doc, score in scored_docs[:top_k]
+        ],
     }
