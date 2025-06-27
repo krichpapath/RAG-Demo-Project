@@ -1,0 +1,18 @@
+[
+  {
+    "query": "ฐานข้อมูลมีตารางอะไรบ้าง?",
+    "relevant": [13, 14]
+  },{
+    "query": "What is Spy classroom?",
+    "relevant": [24, 25, 27],
+    "reason": "Test named anime used in test recommendations"
+  },{
+    "query": "What is ข้อความลอย?",
+    "relevant": [1, 2, 7, 8, 9, 29, 30],
+    "reason": "Test recurring Thai keyword across multiple sections"
+  },{
+    "query": "Who can add, delete, and edit in the web application?",
+    "relevant": [3],
+    "reason": "Test permission-related content from the abstract"
+  }
+]

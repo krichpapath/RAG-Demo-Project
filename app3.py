@@ -118,7 +118,7 @@ async def generate(user_query: str, top_k: int = 3 , top_rerank: int = 1):
     }
 
 @app.get("/generate-hybrid")
-async def generate_hybrid(user_query: str, top_k: int = 5, top_rerank: int = 1, alpha: float = 0.6):
+async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3, alpha: float = 0.6):
     # Step 1: Embed query
     query_vector = embed_queries([user_query])
 
