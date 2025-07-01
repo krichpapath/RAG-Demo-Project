@@ -9,3 +9,5 @@ python-dotenv
 langchain
 mistralai
 pypdf
+matplotlib
+FlagEmbedding

@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from embeddings import embed_queries, embed_texts
+from embeddings_2 import embed_queries, embed_texts
 from faiss_index import FaissIndex
 from reranker import compute_scores
 from chunk_text import split_text_with_langchain
@@ -99,7 +99,7 @@ for metric, scores in results.items():
 
 # Plot for Each Query
 print("\n📊 ploting graph")
-os.makedirs("./eval/plots/qwen3", exist_ok=True)
+os.makedirs("./eval/plots/bge_m3", exist_ok=True)
 try:
     th_font = fm.FontProperties(fname="C:/Windows/Fonts/leelawad.ttf")
 except Exception:
@@ -125,7 +125,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     ax.legend()
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig(f"./eval/plots/qwen3/query_{i+1}.png")
+    plt.savefig(f"./eval/plots/bge_m3/query_{i+1}.png")
     plt.close(fig)
 
-print("\u2705 All plots saved in ./eval/plots/qwen3")
+print("\u2705 All plots saved in ./eval/plots/bge_m3")
