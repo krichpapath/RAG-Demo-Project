@@ -81,8 +81,6 @@ for idx, item in enumerate(eval_data):
     rerank_texts = [documents[i] for i in hybrid_ranked]
     rerank_scores = compute_scores(query, rerank_texts)
     reranked_hybrid = [i for _, i in sorted(zip(rerank_scores, hybrid_ranked), reverse=True)[:3]]
-<<<<<<< HEAD
-=======
 
     # Save Top-K Results to File
     os.makedirs("./eval/logs", exist_ok=True)
@@ -103,7 +101,6 @@ for idx, item in enumerate(eval_data):
             log_file.write("="*50 + "\n\n")
 
     print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
->>>>>>> feat/rerank_gemma
 
     # Metrics
     metric_values = {}
@@ -158,8 +155,4 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     plt.savefig(f"./eval/plots/qwen3/query_{i+1}.png")
     plt.close(fig)
 
-<<<<<<< HEAD
-print("\u2705 All plots saved in ./eval/plots/qwen3")
-=======
 print("\u2705 All plots saved in ./eval/plot")
->>>>>>> feat/rerank_gemma
