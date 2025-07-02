@@ -46,6 +46,9 @@ def mrr(pred, gold):
             return 1.0 / rank
     return 0.0
 
+def f1_score(p, r):
+    return 2 * (p * r) / (p + r) if (p + r) > 0 else 0
+
 # --- Evaluation Loop ---
 results = defaultdict(list)
 all_metrics = []
@@ -56,38 +59,62 @@ for idx, item in enumerate(eval_data):
     query_vec = embed_queries([query])
 
     # FAISS
-    faiss_dist, faiss_idx = faiss_index.search(query_vec, top_k=10)
-    faiss_ranked = faiss_idx[0].tolist()
+    faiss_distances, faiss_indices = faiss_index.search(query_vec, top_k=10)
+    faiss_ranked = faiss_indices[0].tolist()
+    faiss_scores = 1 - (faiss_distances[0] / (np.max(faiss_distances[0]) + 1e-8))
 
     # BM25
     bm25_scores = bm25.get_scores(query)
     bm25_ranked = np.argsort(bm25_scores)[::-1][:10].tolist()
+    bm25_norm = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores) + 1e-8)
 
     # Hybrid
-    faiss_scores = 1 - (faiss_dist[0] / max(faiss_dist[0]))
-    bm25_norm = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores) + 1e-8)
     hybrid_scores = {}
-    for i, idx_ in enumerate(faiss_idx[0]):
+    for i, idx_ in enumerate(faiss_ranked):
         hybrid_scores[idx_] = 0.7 * faiss_scores[i]
-    for idx_, score in enumerate(bm25_norm):
-        hybrid_scores[idx_] = hybrid_scores.get(idx_, 0) + 0.3 * score
-    hybrid_ranked = [i for i, _ in sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:10]]
+    for idx_, bm25_score in enumerate(bm25_norm):
+        hybrid_scores[idx_] = hybrid_scores.get(idx_, 0) + 0.3 * bm25_score
 
-    # Reranked FAISS
-    rerank_scores = compute_scores(query, [documents[i] for i in faiss_ranked])
-    reranked_faiss = [i for _, i in sorted(zip(rerank_scores, faiss_ranked), reverse=True)]
+    hybrid_ranked = [idx for idx, _ in sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:10]]
+
+    # Rerank Hybrid
+    rerank_texts = [documents[i] for i in hybrid_ranked]
+    rerank_scores = compute_scores(query, rerank_texts)
+    reranked_hybrid = [i for _, i in sorted(zip(rerank_scores, hybrid_ranked), reverse=True)[:3]]
+
+    # Save Top-K Results to File
+    os.makedirs("./eval/logs", exist_ok=True)
+    with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
+        for i, (query, metric_dict) in enumerate(all_metrics):
+            log_file.write(f"=== Query {i+1} ===\n")
+            log_file.write(f"Query: {query}\n")
+            log_file.write(f"Relevant IDs: {eval_data[i]['relevant']}\n\n")
+
+            for step_name, ranked in zip(["FAISS", "BM25", "Hybrid", "Rerank"],
+                                        [faiss_ranked, bm25_ranked, hybrid_ranked, reranked_hybrid]):
+                log_file.write(f"--- {step_name} Top-{len(ranked)} Results ---\n")
+                for rank, idx in enumerate(ranked, start=1):
+                    snippet = documents[idx][:100].replace("\n", " ").strip()
+                    log_file.write(f"{rank:02d}. [ID {idx}] {snippet}...\n")
+                log_file.write("\n")
+
+            log_file.write("="*50 + "\n\n")
+
+    print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
 
     # Metrics
     metric_values = {}
     for name, ranked in zip(["FAISS", "BM25", "Hybrid", "Rerank"],
-                             [faiss_ranked, bm25_ranked, hybrid_ranked, reranked_faiss]):
+                             [faiss_ranked, bm25_ranked, hybrid_ranked, reranked_hybrid]):
         p = precision_at_k(ranked, relevant, 5)
         r = recall_at_k(ranked, relevant, 5)
         m = mrr(ranked, relevant)
+        f1 = f1_score(p, r)
         results[f"{name.lower()}_p@5"].append(p)
         results[f"{name.lower()}_r@5"].append(r)
         results[f"{name.lower()}_mrr"].append(m)
-        metric_values[name] = (p, r, m)
+        results[f"{name.lower()}_f1@5"].append(f1)
+        metric_values[name] = (p, r, m, f1)
 
     all_metrics.append((query, metric_values))
 
@@ -108,6 +135,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     p_scores = [metric_dict[m][0] for m in models]
     r_scores = [metric_dict[m][1] for m in models]
     mrr_scores = [metric_dict[m][2] for m in models]
+    f1_scores = [metric_dict[m][3] for m in models]
 
     fig, ax = plt.subplots(figsize=(10, 5))
     x = np.arange(len(models))
@@ -115,6 +143,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     ax.plot(x, p_scores, marker='o', label='Precision@5')
     ax.plot(x, r_scores, marker='s', label='Recall@5')
     ax.plot(x, mrr_scores, marker='^', label='MRR')
+    ax.plot(x, f1_scores, marker='d', linestyle='--', label='F1-Score@5')
 
     ax.set_xticks(x)
     ax.set_xticklabels(models, fontproperties=th_font)
@@ -126,4 +155,4 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     plt.savefig(f"./eval/plots/query_{i+1}.png")
     plt.close(fig)
 
-print("✅ All plots saved in ./eval/plots")
+print("\u2705 All plots saved in ./eval/plot")
