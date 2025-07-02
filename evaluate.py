@@ -46,6 +46,9 @@ def mrr(pred, gold):
             return 1.0 / rank
     return 0.0
 
+def f1_score(p, r):
+    return 2 * (p * r) / (p + r) if (p + r) > 0 else 0
+
 # --- Evaluation Loop ---
 results = defaultdict(list)
 all_metrics = []
@@ -78,6 +81,29 @@ for idx, item in enumerate(eval_data):
     rerank_texts = [documents[i] for i in hybrid_ranked]
     rerank_scores = compute_scores(query, rerank_texts)
     reranked_hybrid = [i for _, i in sorted(zip(rerank_scores, hybrid_ranked), reverse=True)[:3]]
+<<<<<<< HEAD
+=======
+
+    # Save Top-K Results to File
+    os.makedirs("./eval/logs", exist_ok=True)
+    with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
+        for i, (query, metric_dict) in enumerate(all_metrics):
+            log_file.write(f"=== Query {i+1} ===\n")
+            log_file.write(f"Query: {query}\n")
+            log_file.write(f"Relevant IDs: {eval_data[i]['relevant']}\n\n")
+
+            for step_name, ranked in zip(["FAISS", "BM25", "Hybrid", "Rerank"],
+                                        [faiss_ranked, bm25_ranked, hybrid_ranked, reranked_hybrid]):
+                log_file.write(f"--- {step_name} Top-{len(ranked)} Results ---\n")
+                for rank, idx in enumerate(ranked, start=1):
+                    snippet = documents[idx][:100].replace("\n", " ").strip()
+                    log_file.write(f"{rank:02d}. [ID {idx}] {snippet}...\n")
+                log_file.write("\n")
+
+            log_file.write("="*50 + "\n\n")
+
+    print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
+>>>>>>> feat/rerank_gemma
 
     # Metrics
     metric_values = {}
@@ -86,10 +112,12 @@ for idx, item in enumerate(eval_data):
         p = precision_at_k(ranked, relevant, 5)
         r = recall_at_k(ranked, relevant, 5)
         m = mrr(ranked, relevant)
+        f1 = f1_score(p, r)
         results[f"{name.lower()}_p@5"].append(p)
         results[f"{name.lower()}_r@5"].append(r)
         results[f"{name.lower()}_mrr"].append(m)
-        metric_values[name] = (p, r, m)
+        results[f"{name.lower()}_f1@5"].append(f1)
+        metric_values[name] = (p, r, m, f1)
 
     all_metrics.append((query, metric_values))
 
@@ -110,6 +138,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     p_scores = [metric_dict[m][0] for m in models]
     r_scores = [metric_dict[m][1] for m in models]
     mrr_scores = [metric_dict[m][2] for m in models]
+    f1_scores = [metric_dict[m][3] for m in models]
 
     fig, ax = plt.subplots(figsize=(10, 5))
     x = np.arange(len(models))
@@ -117,6 +146,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     ax.plot(x, p_scores, marker='o', label='Precision@5')
     ax.plot(x, r_scores, marker='s', label='Recall@5')
     ax.plot(x, mrr_scores, marker='^', label='MRR')
+    ax.plot(x, f1_scores, marker='d', linestyle='--', label='F1-Score@5')
 
     ax.set_xticks(x)
     ax.set_xticklabels(models, fontproperties=th_font)
@@ -128,4 +158,8 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     plt.savefig(f"./eval/plots/qwen3/query_{i+1}.png")
     plt.close(fig)
 
+<<<<<<< HEAD
 print("\u2705 All plots saved in ./eval/plots/qwen3")
+=======
+print("\u2705 All plots saved in ./eval/plot")
+>>>>>>> feat/rerank_gemma
