@@ -52,6 +52,7 @@ def f1_score(p, r):
 # --- Evaluation Loop ---
 results = defaultdict(list)
 all_metrics = []
+top_k_per_query = []  # <-- Add this to store rankings for each query
 
 for idx, item in enumerate(eval_data):
     query = item["query"]
@@ -82,25 +83,13 @@ for idx, item in enumerate(eval_data):
     rerank_scores = compute_scores(query, rerank_texts)
     reranked_hybrid = [i for _, i in sorted(zip(rerank_scores, hybrid_ranked), reverse=True)[:3]]
 
-    # Save Top-K Results to File
-    os.makedirs("./eval/logs", exist_ok=True)
-    with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
-        for i, (query, metric_dict) in enumerate(all_metrics):
-            log_file.write(f"=== Query {i+1} ===\n")
-            log_file.write(f"Query: {query}\n")
-            log_file.write(f"Relevant IDs: {eval_data[i]['relevant']}\n\n")
-
-            for step_name, ranked in zip(["FAISS", "BM25", "Hybrid", "Rerank"],
-                                        [faiss_ranked, bm25_ranked, hybrid_ranked, reranked_hybrid]):
-                log_file.write(f"--- {step_name} Top-{len(ranked)} Results ---\n")
-                for rank, idx in enumerate(ranked, start=1):
-                    snippet = documents[idx][:100].replace("\n", " ").strip()
-                    log_file.write(f"{rank:02d}. [ID {idx}] {snippet}...\n")
-                log_file.write("\n")
-
-            log_file.write("="*50 + "\n\n")
-
-    print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
+    # Store rankings for this query
+    top_k_per_query.append({
+        "faiss": faiss_ranked,
+        "bm25": bm25_ranked,
+        "hybrid": hybrid_ranked,
+        "rerank": reranked_hybrid
+    })
 
     # Metrics
     metric_values = {}
@@ -118,6 +107,28 @@ for idx, item in enumerate(eval_data):
 
     all_metrics.append((query, metric_values))
 
+# --- Move log writing here, after the loop ---
+os.makedirs("./eval/logs", exist_ok=True)
+with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
+    for i, (query, metric_dict) in enumerate(all_metrics):
+        log_file.write(f"=== Query {i+1} ===\n")
+        log_file.write(f"Query: {query}\n")
+        log_file.write(f"Relevant IDs: {eval_data[i]['relevant']}\n\n")
+
+        top_k = top_k_per_query[i]
+        for step_name, ranked in zip(["FAISS", "BM25", "Hybrid", "Rerank"],
+                                     [top_k["faiss"], top_k["bm25"], top_k["hybrid"], top_k["rerank"]]):
+            log_file.write(f"--- {step_name} Top-{len(ranked)} Results ---\n")
+            for rank, idx in enumerate(ranked, start=1):
+                snippet = documents[idx][:100].replace("\n", " ").strip()
+                log_file.write(f"{rank:02d}. [ID {idx}] {snippet}...\n")
+            log_file.write("\n")
+
+        log_file.write("="*50 + "\n\n")
+
+print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
+
+# Metrics
 print("\n===== Evaluation Results =====")
 for metric, scores in results.items():
     print(f"{metric}: {np.mean(scores):.3f}")
