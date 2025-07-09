@@ -18,7 +18,7 @@ app = FastAPI()
 
 # --- OCR and Chunking Pipeline ---
 PDF_PATH = "./pdf_files/anime.pdf"
-TEXT_PATH = "./text_document/ocr_all_pdf.txt"
+TEXT_PATH = "./text_document/chemistry.txt"
 
 # Run OCR
 if not os.path.exists(TEXT_PATH):
@@ -154,7 +154,9 @@ async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3,
         model="gpt-4o-mini-2024-07-18",
         input=[
             {"role": "system", "content": (
-                "You are a helpful assistant. Only use the context below to answer the question. "
+                "You are a helpful assistant. Answer this question using the following context, by providing necessary images "
+                "Image codes should be in the context only, if cannot find the image, say 'Image not found'."
+                "image code should be in the format: ![image](image_code). "
                 "DON'T retrieve data from other sources. Also, make a pun if possible and end with an emoji."
             )},
             {"role": "user", "content": prompt}
