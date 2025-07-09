@@ -1,9 +1,9 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from embeddings import embed_queries, embed_texts
+from embeddings_2 import embed_queries, embed_texts
 from faiss_index import FaissIndex
-from reranker import compute_scores
+from reranker3 import compute_scores
 from chunk_text import split_text_with_langchain
 from bm25_index import BM25Retriever
 from ocr import get_all_pdf
@@ -12,9 +12,9 @@ from collections import defaultdict
 import matplotlib.font_manager as fm
 
 # Load and Prepare Data
-PDF_PATH = "./pdf_files/anime.pdf"
-TEXT_PATH = "./text_document/ocr_all_pdf.txt"
-EVAL_SET = "./eval_data.json"
+PDF_PATH = ""
+TEXT_PATH = "./text_document/biology.txt"
+EVAL_SET = "./eval_data4.json"
 
 if not os.path.exists(TEXT_PATH):
     get_all_pdf(PDF_PATH, output_path=TEXT_PATH)
@@ -52,7 +52,7 @@ def f1_score(p, r):
 # --- Evaluation Loop ---
 results = defaultdict(list)
 all_metrics = []
-top_k_per_query = []  # <-- Add this to store rankings for each query
+top_k_per_query = []
 
 for idx, item in enumerate(eval_data):
     query = item["query"]
@@ -108,8 +108,8 @@ for idx, item in enumerate(eval_data):
     all_metrics.append((query, metric_values))
 
 # --- Move log writing here, after the loop ---
-os.makedirs("./eval/logs", exist_ok=True)
-with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
+os.makedirs("./eval_bio_6/logs", exist_ok=True)
+with open("./eval_bio_6/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
     for i, (query, metric_dict) in enumerate(all_metrics):
         log_file.write(f"=== Query {i+1} ===\n")
         log_file.write(f"Query: {query}\n")
@@ -126,7 +126,7 @@ with open("./eval/logs/top_k_results.txt", "w", encoding="utf-8") as log_file:
 
         log_file.write("="*50 + "\n\n")
 
-print("📝 Top‑K logs saved at ./eval/logs/top_k_results.txt")
+print("📝 Top‑K logs saved at ./eval_bio_6/logs/top_k_results.txt")
 
 # Metrics
 print("\n===== Evaluation Results =====")
@@ -135,7 +135,7 @@ for metric, scores in results.items():
 
 # Plot for Each Query
 print("\n📊 ploting graph")
-os.makedirs("./eval/plots/qwen3", exist_ok=True)
+os.makedirs("./eval_bio_6/plots/qwen3", exist_ok=True)
 try:
     th_font = fm.FontProperties(fname="C:/Windows/Fonts/leelawad.ttf")
 except Exception:
@@ -163,7 +163,7 @@ for i, (query, metric_dict) in enumerate(all_metrics):
     ax.legend()
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig(f"./eval/plots/qwen3/query_{i+1}.png")
+    plt.savefig(f"./eval_bio_6/plots/qwen3/query_{i+1}.png")
     plt.close(fig)
 
-print("\u2705 All plots saved in ./eval/plot")
+print("\u2705 All plots saved in ./eval_bio_6/plot")

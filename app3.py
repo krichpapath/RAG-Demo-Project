@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Query
-from embeddings import embed_texts, embed_queries
+from embeddings_2 import embed_texts, embed_queries
 from faiss_index import FaissIndex
 from openai import OpenAI
 from dotenv import load_dotenv
-from reranker import compute_scores
+from reranker2 import compute_scores
 from chunk_text import split_text_with_langchain
 from ocr import get_all_pdf
 from bm25_index import BM25Retriever
@@ -118,54 +118,60 @@ async def generate(user_query: str, top_k: int = 3 , top_rerank: int = 1):
     }
 
 @app.get("/generate-hybrid")
-async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3, alpha: float = 0.6):
-    # Step 1: Embed query
+async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3, alpha: float = 0.7):
+    # Step 1: Embed Query
     query_vector = embed_queries([user_query])
 
-    # Step 2: FAISS
+    # Step 2: FAISS Retrieval
     faiss_distances, faiss_indices = faiss_index.search(query_vector, top_k=top_k)
-    faiss_scores = 1 - (faiss_distances[0] / max(faiss_distances[0]))
+    faiss_ranked = faiss_indices[0].tolist()
+    faiss_scores = 1 - (faiss_distances[0] / (np.max(faiss_distances[0]) + 1e-8))
 
-    # Step 3: BM25
-    bm25_raw = bm25.get_scores(user_query)
-    bm25_norm = (bm25_raw - np.min(bm25_raw)) / (np.max(bm25_raw) - np.min(bm25_raw) + 1e-8)
+    # Step 3: BM25 Retrieval
+    bm25_scores = bm25.get_scores(user_query)
+    bm25_norm = (bm25_scores - np.min(bm25_scores)) / (np.max(bm25_scores) - np.min(bm25_scores) + 1e-8)
 
-    # Step 4: Combine
+    # Step 4: Combine Hybrid Scores
     hybrid_scores = {}
-    for i, idx in enumerate(faiss_indices[0]):
+    for i, idx in enumerate(faiss_ranked):
         hybrid_scores[idx] = alpha * faiss_scores[i]
-    for idx, bm25_score in enumerate(bm25_norm):
-        hybrid_scores[idx] = hybrid_scores.get(idx, 0) + (1 - alpha) * bm25_score
+    for idx, score in enumerate(bm25_norm):
+        hybrid_scores[idx] = hybrid_scores.get(idx, 0) + (1 - alpha) * score
 
-    top = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-    top_docs = [documents[i] for i, _ in top]
+    # Step 5: Select Top-K Hybrid Docs
+    hybrid_ranked = [idx for idx, _ in sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]]
+    hybrid_texts = [documents[i] for i in hybrid_ranked]
 
-    # Step 5: Rerank
-    scores = compute_scores(user_query, top_docs)
-    scored_docs = sorted(zip(top_docs, scores), key=lambda x: x[1], reverse=True)
-    reranked_top_docs = [doc for doc, score in scored_docs[:top_rerank]]
-    context = "\n".join(reranked_top_docs)
+    # Step 6: Rerank Top-K Hybrid Docs
+    rerank_scores = compute_scores(user_query, hybrid_texts)
+    reranked_hybrid = [i for _, i in sorted(zip(rerank_scores, hybrid_ranked), reverse=True)[:top_rerank]]
+    reranked_texts = [documents[i] for i in reranked_hybrid]
+    context = "\n".join(reranked_texts)
 
-    # Step 6: Generate
+    # Step 7: Generate Answer
     prompt = f"Context:\n{context}\n\nQuestion: {user_query}\nAnswer:"
-
     response = client.responses.create(
         model="gpt-4o-mini-2024-07-18",
         input=[
             {"role": "system", "content": (
-                "You are a helpful assistant. Only use the context below to answer the question, "
+                "You are a helpful assistant. Only use the context below to answer the question. "
                 "DON'T retrieve data from other sources. Also, make a pun if possible and end with an emoji."
             )},
             {"role": "user", "content": prompt}
         ],
     )
+
     return {
         "query": user_query,
         "top_k": top_k,
+        "top_rerank": top_rerank,
         "alpha": alpha,
         "generated_answer": response.output_text.strip(),
         "reranked_top_docs": [
-            {"document": doc, "score": score}
-            for doc, score in scored_docs[:top_k]
-        ],
+            {
+                "document": documents[i],
+                "score": float(score)
+            }
+            for i, score in sorted(zip(reranked_hybrid, rerank_scores), key=lambda x: reranked_hybrid.index(x[0]))
+        ]
     }
