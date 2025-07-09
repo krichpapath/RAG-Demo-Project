@@ -10,6 +10,9 @@ from bm25_index import BM25Retriever
 import numpy as np
 import os
 import re
+from storage import S3Storage
+from PIL import Image
+import io
 
 # --- Load Environment Variables ---
 load_dotenv()
@@ -45,6 +48,14 @@ print("✅ FAISS index built.")
 # Initialize BM25
 bm25 = BM25Retriever(documents)
 print("✅ BM25 index initialized.")
+
+
+# --- S3 Storage Setup ---
+S3_ACCESS = os.getenv('AWS_ACCESS_KEY')
+S3_SECRET = os.getenv('AWS_SECRET_KEY')
+S3_BUCKET = os.getenv('AWS_BUCKET_NAME')
+S3_REGION = "ap-southeast-2"
+s3_storage = S3Storage(S3_ACCESS, S3_SECRET, S3_BUCKET, S3_REGION)
 
 # --- FastAPI Endpoints ---
 
@@ -157,7 +168,7 @@ async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3,
             {"role": "system", "content": (
                 "You are a helpful assistant. Answer this question using the following context, by providing necessary images "
                 "Image codes should be in the context only, if cannot find the image, say 'Image not found'."
-                "image code should be in the format: ![image](image_code). "
+                "image code should be in the format: ![datetime-uuid](datetime-uuid). "
                 "DON'T retrieve data from other sources. Also, make a pun if possible and end with an emoji."
             )},
             {"role": "user", "content": prompt}
@@ -168,12 +179,30 @@ async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3,
     image_filenames = re.findall(r'!\[.*?\]\((.*?)\)', anwser)
     print(f"Image filenames found: {image_filenames}")
 
+    # Retrieve and open images from S3 using PIL (use only filename as key)
+    pil_images = []
+    for image_id in image_filenames:
+        # Extract only the filename if path is given
+        filename = os.path.basename(image_id)
+        print(f"Processing image filename: {filename}")
+        filename = filename.rsplit('.', 1)[0]
+        print(f"Final filename to retrieve: {filename}")
+        try:
+            img_binary = s3_storage.get_image_binary(filename)
+            img = Image.open(io.BytesIO(img_binary))
+            pil_images.append({"image_id": filename, "image": img})
+            print(f"Loaded image from S3: {filename}")
+            img.show()  # Show image on your computer
+        except Exception as e:
+            print(f"Failed to load image {filename} from S3: {e}")
+
     return {
         "query": user_query,
         "top_k": top_k,
         "top_rerank": top_rerank,
         "alpha": alpha,
         "generated_answer": anwser,
+        "image_filenames": image_filenames,
         "reranked_top_docs": [
             {
                 "document": documents[i],
