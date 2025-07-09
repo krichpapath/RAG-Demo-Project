@@ -9,6 +9,7 @@ from ocr import get_all_pdf
 from bm25_index import BM25Retriever
 import numpy as np
 import os
+import re
 
 # --- Load Environment Variables ---
 load_dotenv()
@@ -18,7 +19,7 @@ app = FastAPI()
 
 # --- OCR and Chunking Pipeline ---
 PDF_PATH = "./pdf_files/anime.pdf"
-TEXT_PATH = "./text_document/chemistry.txt"
+TEXT_PATH = "./text_document/chemistry2.txt"
 
 # Run OCR
 if not os.path.exists(TEXT_PATH):
@@ -163,12 +164,16 @@ async def generate_hybrid(user_query: str, top_k: int = 10, top_rerank: int = 3,
         ],
     )
 
+    anwser = response.output_text.strip()
+    image_filenames = re.findall(r'!\[.*?\]\((.*?)\)', anwser)
+    print(f"Image filenames found: {image_filenames}")
+
     return {
         "query": user_query,
         "top_k": top_k,
         "top_rerank": top_rerank,
         "alpha": alpha,
-        "generated_answer": response.output_text.strip(),
+        "generated_answer": anwser,
         "reranked_top_docs": [
             {
                 "document": documents[i],

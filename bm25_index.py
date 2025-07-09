@@ -56,7 +56,6 @@ if __name__ == "__main__":
         "data science with Python",
         "Pad Thai กรุงเทพฯ"
     ]
-
     for query in test_queries:
         print(f"\n=== Query: '{query}' ===")
         results = retriever.get_top_indices_with_scores(query, n=3)
